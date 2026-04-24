@@ -59,6 +59,13 @@ const Globals = () => (
     @keyframes grain { 0%,100%{transform:translate(0,0)} 20%{transform:translate(-2px,2px)} 40%{transform:translate(-2px,-2px)} 60%{transform:translate(2px,2px)} 80%{transform:translate(2px,-2px)} }
     .grain { animation: grain .6s steps(1) infinite; }
 
+    /* Marquee */
+    @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+    .marquee { animation: marquee 28s linear infinite; }
+
+    /* Date input */
+    input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0; position: absolute; right: 0; width: 40px; height: 100%; cursor: pointer; }
+
     /* Tab active indicator  */
     .tab-btn { transition: all .3s cubic-bezier(.22,1,.36,1); }
     .tab-btn:hover { color: ${C.gold} !important; border-color: rgba(201,169,110,0.5) !important; }
@@ -282,11 +289,11 @@ const MotionLayerScroller = () => {
   const op = useTransform(scrollYProgress, [0, .2, .8, 1], [0, 1, 1, 0])
 
   return (
-    <div ref={ref} style={{ position: 'relative', height: 700, overflow: 'hidden', background: C.charcoal, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div ref={ref} style={{ position: 'relative', height: '100vh', minHeight: 600, overflow: 'hidden', background: C.charcoal, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
 
       {/* Layer 1 — Ocean Parallax Image */}
       <motion.div style={{ position: 'absolute', inset: '-20%', y: y1, pointerEvents: 'none' }}>
-        <img src={imgParallaxOcean} alt="Ocean" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.35 }} />
+        <img src={imgParallaxOcean} alt="Ocean" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.35 }} />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, #1A1814 0%, transparent 20%, transparent 80%, #0D0C0A 100%)' }} />
       </motion.div>
 
@@ -509,11 +516,11 @@ const About = () => {
             viewport={{ once: true }} transition={{ duration: 1, delay: 0.1 }}
             style={{ position: 'absolute', top: -40, left: -40, width: '60%', height: '80%', zIndex: 0 }}
           >
-            <img src={imgAboutPortrait} alt="Chef" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.4 }} />
+            <img src={imgAboutPortrait} alt="Chef" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.4 }} />
           </motion.div>
 
           <RadiusOnScroll style={{ position: 'absolute', top: 40, right: 0, width: '85%', height: '100%', zIndex: 1, boxShadow: '0 24px 64px rgba(0,0,0,0.15)' }}>
-            <img src={imgAboutDish} alt="Fine dining dish" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={imgAboutDish} alt="Fine dining dish" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             {/* subtle golden overlay at bottom */}
             <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '40%', background: 'linear-gradient(to top, rgba(26,24,20,0.8), transparent)' }} />
             
@@ -554,6 +561,21 @@ const About = () => {
 
       </div>
     </section>
+  )
+}
+
+/* ════════════════════════════════════════════
+   MARQUEE STRIP
+════════════════════════════════════════════ */
+const MarqueeStrip = () => {
+  const content = "Fine Dining · Est. 2019 · Coastal · Saffron & Sea · Handcrafted · ".repeat(6)
+  return (
+    <div style={{ background: C.gold, height: 48, display: 'flex', alignItems: 'center', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+      <div style={{ display: 'flex', width: '200%' }}>
+        <p className="marquee" style={{ fontFamily: F.label, fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: C.charcoal, minWidth: '100%', whiteSpace: 'nowrap', paddingRight: 3 }}>{content}</p>
+        <p className="marquee" style={{ fontFamily: F.label, fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: C.charcoal, minWidth: '100%', whiteSpace: 'nowrap', paddingRight: 3 }}>{content}</p>
+      </div>
+    </div>
   )
 }
 
@@ -606,7 +628,7 @@ const Menu = () => {
     <section id="menu" style={{ background: C.charcoal, padding: '130px 60px', position: 'relative', overflow: 'hidden' }} className="pad-m">
       {/* Background Parallax Image */}
       <div style={{ position: 'absolute', top: 0, right: 0, width: '45%', height: '100%', opacity: 0.15, pointerEvents: 'none' }}>
-        <img src={imgMenuSpread} alt="Menu Spread" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', WebkitMaskImage: 'linear-gradient(to left, black, transparent)', maskImage: 'linear-gradient(to left, black, transparent)' }} />
+        <img src={imgMenuSpread} alt="Menu Spread" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', WebkitMaskImage: 'linear-gradient(to left, black, transparent)', maskImage: 'linear-gradient(to left, black, transparent)' }} />
       </div>
 
       <div style={{ maxWidth: 1200, margin: '0 auto', position: 'relative', zIndex: 2 }}>
@@ -639,7 +661,7 @@ const Menu = () => {
 
         <AnimatePresence mode="wait">
           <motion.div key={active} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .25 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 2 }} className="col1-m">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 28 }} className="col1-m">
               {shown.map((d, i) => <DishCard key={d.name} dish={d} index={i} />)}
             </div>
           </motion.div>
@@ -653,9 +675,9 @@ const Menu = () => {
    EXPERIENCE  — EFFECT 3 GlassCard × 3
 ════════════════════════════════════════════ */
 const EXP = [
-  { icon: '🕯️', title: 'Intimate Atmosphere', desc: '36 seats. Warm candlelight. A space designed for conversation, connection, and unhurried pleasure.' },
-  { icon: '🍷', title: 'Wine Pairing', desc: 'Our sommelier curates pairings from 400+ labels — organic naturals to rare Burgundy vintages.' },
-  { icon: '👨‍🍳', title: "Chef's Table", desc: 'Sit at the pass. Watch every dish composed. An exclusive 8-seat counter with a 12-course menu.' },
+  { icon: <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={C.gold} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c2.2 0 4-1.8 4-4v-6H8v6c0 2.2 1.8 4 4 4z"/><path d="M12 12c-1.6 0-3-1.3-3-3 0-2.8 3-7 3-7s3 4.2 3 7c0 1.7-1.4 3-3 3z"/></svg>, title: 'Intimate Atmosphere', desc: '36 seats. Warm candlelight. A space designed for conversation, connection, and unhurried pleasure.' },
+  { icon: <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={C.gold} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 22h8"/><path d="M12 15v7"/><path d="M12 15a7.5 7.5 0 0 0 7.5-7.5C19.5 5 18 3 12 3S4.5 5 4.5 7.5 8 15 12 15z"/><path d="M4.5 7.5h15"/></svg>, title: 'Wine Pairing', desc: 'Our sommelier curates pairings from 400+ labels — organic naturals to rare Burgundy vintages.' },
+  { icon: <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={C.gold} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"/><line x1="6" y1="17" x2="18" y2="17"/></svg>, title: "Chef's Table", desc: 'Sit at the pass. Watch every dish composed. An exclusive 8-seat counter with a 12-course menu.' },
 ]
 
 const Experience = () => {
@@ -679,7 +701,7 @@ const Experience = () => {
         <Reveal delay={.2}>
           <div style={{ width: '100%', height: 400, borderRadius: 8, overflow: 'hidden', marginBottom: 80, position: 'relative', boxShadow: '0 24px 64px rgba(0,0,0,0.1)' }}>
             <motion.div style={{ position: 'absolute', inset: '-15%', y: yImage }}>
-              <img src={imgExpInterior} alt="Restaurant Interior" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img src={imgExpInterior} alt="Restaurant Interior" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </motion.div>
           </div>
         </Reveal>
@@ -744,7 +766,12 @@ const Reservation = () => (
         <form onSubmit={e => e.preventDefault()} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, textAlign: 'left' }} className="col1-m">
           <Field label="Full Name" placeholder="Your name" />
           <Field label="Email Address" type="email" placeholder="your@email.com" />
-          <Field label="Date" type="date" />
+          <Field label="Date">
+            <div style={{ position: 'relative' }}>
+              <input type="date" style={baseInput} onFocus={onFoc} onBlur={onBlr} />
+              <svg style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.gold} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            </div>
+          </Field>
           <Field label="Guests">
             <select style={{ ...baseInput, cursor: 'pointer' }} onFocus={onFoc} onBlur={onBlr}>
               {[2, 3, 4, 5].map(n => <option key={n} style={{ background: C.deep }}>{n} guests</option>)}
@@ -782,18 +809,21 @@ const Reservation = () => (
    FOOTER
 ════════════════════════════════════════════ */
 const Footer = () => (
-  <footer style={{ background: C.deep, borderTop: `1px solid rgba(201,169,110,0.1)`, padding: '64px 60px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 28 }}>
-    <div style={{ fontFamily: F.display, fontSize: 28, fontWeight: 300, letterSpacing: 4, color: C.warmWhite, textTransform: 'uppercase' }}>
+  <footer style={{ position: 'relative', overflow: 'hidden', background: C.deep, borderTop: `1px solid rgba(201,169,110,0.1)`, padding: '64px 60px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 28 }}>
+    <div style={{ position: 'absolute', bottom: -20, left: '50%', transform: 'translateX(-50%)', fontFamily: F.display, fontSize: 'clamp(80px, 18vw, 220px)', fontWeight: 300, color: 'rgba(201,169,110,0.04)', letterSpacing: 16, textTransform: 'uppercase', whiteSpace: 'nowrap', zIndex: 0, pointerEvents: 'none' }}>
+      SAFFRON
+    </div>
+    <div style={{ position: 'relative', zIndex: 1, fontFamily: F.display, fontSize: 28, fontWeight: 300, letterSpacing: 4, color: C.warmWhite, textTransform: 'uppercase' }}>
       Saffron <span style={{ color: C.gold }}>&amp;</span> Sea
     </div>
-    <nav style={{ display: 'flex', gap: 36 }}>
+    <nav style={{ position: 'relative', zIndex: 1, display: 'flex', gap: 36 }}>
       {[['#about', 'Story'], ['#menu', 'Menu'], ['#experience', 'Experience'], ['#reserve', 'Reserve']].map(([h, l]) => (
         <a key={h} href={h} className="nl hoverable" style={{ fontFamily: F.label, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: C.muted, textDecoration: 'none', transition: 'color .3s' }}
           onMouseEnter={e => e.target.style.color = C.gold} onMouseLeave={e => e.target.style.color = C.muted}
         >{l}</a>
       ))}
     </nav>
-    <p style={{ fontSize: 12, color: 'rgba(140,130,120,0.38)', fontFamily: F.body }}>© 2025 Saffron &amp; Sea. All rights reserved.</p>
+    <p style={{ position: 'relative', zIndex: 1, fontSize: 12, color: 'rgba(140,130,120,0.38)', fontFamily: F.body }}>© 2025 Saffron &amp; Sea. All rights reserved.</p>
   </footer>
 )
 
@@ -809,6 +839,7 @@ export default function App() {
       <main>
         <Hero />
         <About />
+        <MarqueeStrip />
         <Menu />
         <Experience />
         <MotionLayerScroller />
