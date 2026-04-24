@@ -5,6 +5,18 @@ import {
 } from 'framer-motion'
 import AuroraBackground from './AuroraBackground'
 
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = React.useState(
+    typeof window !== 'undefined' ? window.innerWidth <= 768 : false
+  )
+  React.useEffect(() => {
+    const fn = () => setIsMobile(window.innerWidth <= 768)
+    window.addEventListener('resize', fn)
+    return () => window.removeEventListener('resize', fn)
+  }, [])
+  return isMobile
+}
+
 import imgAboutDish from './assets/about-dish.jpg'
 import imgAboutPortrait from './assets/about-portrait.jpg'
 import imgParallaxOcean from './assets/parallax-ocean.jpg'
@@ -74,6 +86,22 @@ const Globals = () => (
       .hide-m { display:none!important; }
       .col1-m { grid-template-columns:1fr!important; }
       .pad-m  { padding:80px 24px!important; }
+
+      body { padding-bottom: 80px; cursor: auto !important; }
+      .mobile-nav-hide { display: none !important; }
+
+      /* hero title scale */
+      .hero-title { font-size: clamp(52px,15vw,80px) !important; line-height: 0.9 !important; }
+
+      /* about image stack fix */
+      .about-img-wrap { height: 320px !important; }
+      .about-portrait-behind { display: none !important; }
+
+      /* experience parallax image static on mobile */
+      .exp-parallax { transform: none !important; }
+
+      /* footer stack */
+      footer { flex-direction: column !important; text-align: center !important; gap: 32px !important; padding: 48px 24px 100px !important; }
     }
   `}</style>
 )
@@ -416,6 +444,7 @@ const Navbar = () => {
 
   return (
     <motion.nav
+      className="mobile-nav-hide"
       initial={{ y: -80, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
       transition={{ duration: .9, ease: [.22, 1, .36, 1] }}
       style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200, padding: `${py}px 60px`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: bg, boxShadow: sdw, transition: 'padding .4s', backdropFilter: 'blur(1px)' }}
@@ -461,7 +490,7 @@ const Hero = () => (
       {/* ── EFFECT 1: CursorMaskReveal ── */}
       <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.1, delay: .45, ease: [.22, 1, .36, 1] }}>
         <CursorMaskReveal>
-          <h1 style={{ fontFamily: F.display, fontSize: 'clamp(72px,12vw,148px)', fontWeight: 300, lineHeight: .88, color: C.warmWhite, letterSpacing: '-1px', userSelect: 'none' }}>
+          <h1 className="hero-title" style={{ fontFamily: F.display, fontSize: 'clamp(72px,12vw,148px)', fontWeight: 300, lineHeight: .88, color: C.warmWhite, letterSpacing: '-1px', userSelect: 'none' }}>
             Saffron<br />
             <em style={{ fontStyle: 'italic' }}>&amp; Sea</em>
           </h1>
@@ -509,9 +538,10 @@ const About = () => {
       <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 88, alignItems: 'center' }} className="col1-m">
 
         {/* ── EFFECT 4: RadiusOnScroll ── */}
-        <div style={{ position: 'relative', height: 600 }}>
+        <div className="about-img-wrap" style={{ position: 'relative', height: 600 }}>
           {/* Portrait behind */}
           <motion.div
+            className="about-portrait-behind"
             initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }} transition={{ duration: 1, delay: 0.1 }}
             style={{ position: 'absolute', top: -40, left: -40, width: '60%', height: '80%', zIndex: 0 }}
@@ -618,11 +648,122 @@ const DishCard = ({ dish, index }) => {
   )
 }
 
+/* ════════════════════════════════════════════
+   MOBILE MENU DECK
+════════════════════════════════════════════ */
+const MobileMenuDeck = ({ dishes }) => {
+  const [index, setIndex] = useState(0)
+
+  // Reset to 0 whenever dishes (filter) changes
+  const prevDishRef = useRef(dishes)
+  useEffect(() => {
+    if (prevDishRef.current !== dishes) {
+      setIndex(0)
+      prevDishRef.current = dishes
+    }
+  }, [dishes])
+
+  // We reverse the array up to current index + 2
+  const visibleCards = [index, index + 1, index + 2].filter(i => i < dishes.length).reverse()
+
+  return (
+    <div>
+      <div style={{ position: 'relative', height: 480, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 16px' }}>
+        
+        {/* Ghost arrows */}
+        <button onClick={() => setIndex(prev => Math.max(0, prev - 1))} style={{ position: 'absolute', left: 0, zIndex: 10, width: 40, height: 40, borderRadius: '50%', background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={C.gold} strokeWidth="1.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        </button>
+        <button onClick={() => setIndex(prev => Math.min(dishes.length - 1, prev + 1))} style={{ position: 'absolute', right: 0, zIndex: 10, width: 40, height: 40, borderRadius: '50%', background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={C.gold} strokeWidth="1.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+
+        <AnimatePresence>
+          {visibleCards.map((i) => (
+            <MobileMenuCard key={i} dish={dishes[i]} index={i} currentIndex={index} total={dishes.length} setIndex={setIndex} />
+          ))}
+        </AnimatePresence>
+      </div>
+
+      <div style={{ textAlign: 'center', marginTop: 24 }}>
+        <p style={{ fontFamily: F.label, fontSize: 10, letterSpacing: 3, color: C.muted }}>{index + 1} / {dishes.length}</p>
+        {index === dishes.length - 1 && (
+          <button onClick={() => setIndex(0)} style={{ fontFamily: F.label, fontSize: 10, letterSpacing: 2, color: C.gold, border: 'none', background: 'transparent', marginTop: 12, textTransform: 'uppercase', padding: '8px 16px', border: `1px solid ${C.gold}`, borderRadius: 4 }}>Start Over</button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+const MobileMenuCard = ({ dish, index, currentIndex, total, setIndex }) => {
+  const x = useMotionValue(0)
+  const rotate = useTransform(x, [-150, 0, 150], [-18, 0, 18])
+  const dragScale = useTransform(x, [-100, 0, 100], [0.85, 1, 0.85])
+
+  const isFront = index === currentIndex
+  const offset = index - currentIndex
+
+  // offset scale and y
+  const sc = offset === 0 ? 1 : offset === 1 ? 0.94 : 0.88
+  const yOff = offset === 0 ? 0 : offset === 1 ? 16 : 32
+  const op = offset === 0 ? 1 : offset === 1 ? 0.7 : 0.4
+
+  const onDragEnd = (e, info) => {
+    if (info.offset.x < -80 || info.offset.x > 80) {
+      setIndex(prev => Math.min(prev + 1, total - 1))
+    }
+  }
+
+  // Swipe hint on first render
+  const animProps = isFront && currentIndex === 0 ? {
+    x: [0, -30, 0], transition: { delay: 1.2, duration: 0.8, ease: "easeInOut" }
+  } : {}
+
+  return (
+    <motion.div
+      style={{
+        position: 'absolute', width: '100%', maxWidth: 360, zIndex: 5 - offset,
+        x: isFront ? x : 0, rotate: isFront ? rotate : 0,
+        scale: isFront ? dragScale : sc,
+      }}
+      initial={{ scale: sc, y: yOff, opacity: op }}
+      animate={{ scale: sc, y: yOff, opacity: op }}
+      exit={{ x: x.get() > 0 ? 500 : -500, opacity: 0, rotate: x.get() > 0 ? 22 : -22, transition: { duration: 0.35, ease: [0.32, 0, 0.67, 0] } }}
+      transition={{ type: 'spring', stiffness: 320, damping: 32, mass: 0.8 }}
+      drag={isFront ? "x" : false}
+      dragConstraints={{ left: 0, right: 0 }}
+      dragElastic={0.12}
+      onDragEnd={onDragEnd}
+    >
+      <div style={{
+        background: 'linear-gradient(160deg, rgba(26,24,20,0.98), rgba(13,12,10,1))',
+        border: '1px solid rgba(201,169,110,0.15)',
+        borderRadius: 20, padding: '36px 28px',
+        boxShadow: '0 24px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(201,169,110,0.08)',
+        pointerEvents: 'none'
+      }}>
+        <p style={{ fontFamily: F.label, fontSize: 9, letterSpacing: 3, textTransform: 'uppercase', color: C.gold, marginBottom: 14 }}>
+          {{ starter: 'Starter', main: 'Main Course', dessert: 'Dessert' }[dish.cat]}
+        </p>
+        <h3 style={{ fontFamily: F.display, fontSize: 34, fontWeight: 300, color: C.warmWhite, lineHeight: 1.1 }}>{dish.name}</h3>
+        <p style={{ fontFamily: F.body, fontSize: 13, color: C.muted, lineHeight: 1.85, marginTop: 12 }}>{dish.desc}</p>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 32 }}>
+          <span style={{ fontFamily: F.display, fontSize: 28, color: C.goldLight }}>{dish.price}</span>
+          <span style={{ fontFamily: F.label, fontSize: 9, border: `1px solid ${C.sage}`, color: C.sage, padding: '4px 10px', borderRadius: 99, textTransform: 'uppercase' }}>{dish.tag}</span>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
 const Menu = () => {
   const [active, setActive] = useState('all')
   const tabs = ['all', 'starter', 'main', 'dessert']
   const tabLabel = { all: 'All', starter: 'Starters', main: 'Mains', dessert: 'Desserts' }
   const shown = active === 'all' ? DISHES : DISHES.filter(d => d.cat === active)
+
+  const isMobile = useIsMobile()
 
   return (
     <section id="menu" style={{ background: C.charcoal, padding: '130px 60px', position: 'relative', overflow: 'hidden' }} className="pad-m">
@@ -660,11 +801,15 @@ const Menu = () => {
         </div>
 
         <AnimatePresence mode="wait">
-          <motion.div key={active} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .25 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 28 }} className="col1-m">
-              {shown.map((d, i) => <DishCard key={d.name} dish={d} index={i} />)}
-            </div>
-          </motion.div>
+          {isMobile ? (
+            <MobileMenuDeck dishes={shown} />
+          ) : (
+            <motion.div key={active} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .25 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 28 }} className="col1-m">
+                {shown.map((d, i) => <DishCard key={d.name} dish={d} index={i} />)}
+              </div>
+            </motion.div>
+          )}
         </AnimatePresence>
       </div>
     </section>
@@ -672,12 +817,30 @@ const Menu = () => {
 }
 
 /* ════════════════════════════════════════════
-   EXPERIENCE  — EFFECT 3 GlassCard × 3
+   EXPERIENCE  — dark dramatic layout
 ════════════════════════════════════════════ */
 const EXP = [
-  { icon: <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={C.gold} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c2.2 0 4-1.8 4-4v-6H8v6c0 2.2 1.8 4 4 4z"/><path d="M12 12c-1.6 0-3-1.3-3-3 0-2.8 3-7 3-7s3 4.2 3 7c0 1.7-1.4 3-3 3z"/></svg>, title: 'Intimate Atmosphere', desc: '36 seats. Warm candlelight. A space designed for conversation, connection, and unhurried pleasure.' },
-  { icon: <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={C.gold} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 22h8"/><path d="M12 15v7"/><path d="M12 15a7.5 7.5 0 0 0 7.5-7.5C19.5 5 18 3 12 3S4.5 5 4.5 7.5 8 15 12 15z"/><path d="M4.5 7.5h15"/></svg>, title: 'Wine Pairing', desc: 'Our sommelier curates pairings from 400+ labels — organic naturals to rare Burgundy vintages.' },
-  { icon: <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={C.gold} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"/><line x1="6" y1="17" x2="18" y2="17"/></svg>, title: "Chef's Table", desc: 'Sit at the pass. Watch every dish composed. An exclusive 8-seat counter with a 12-course menu.' },
+  {
+    num: '01', tag: 'Atmosphere',
+    icon: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.gold} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c2.2 0 4-1.8 4-4v-6H8v6c0 2.2 1.8 4 4 4z"/><path d="M12 12c-1.6 0-3-1.3-3-3 0-2.8 3-7 3-7s3 4.2 3 7c0 1.7-1.4 3-3 3z"/></svg>,
+    title: 'Intimate Atmosphere',
+    desc: '36 seats. Warm candlelight. A space designed for conversation, connection, and unhurried pleasure.',
+    stat: '36', statLabel: 'Seats'
+  },
+  {
+    num: '02', tag: 'Sommelier',
+    icon: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.gold} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 22h8"/><path d="M12 15v7"/><path d="M12 15a7.5 7.5 0 0 0 7.5-7.5C19.5 5 18 3 12 3S4.5 5 4.5 7.5 8 15 12 15z"/><path d="M4.5 7.5h15"/></svg>,
+    title: 'Wine Pairing',
+    desc: 'Our sommelier curates pairings from 400+ labels — organic naturals to rare Burgundy vintages.',
+    stat: '400+', statLabel: 'Labels'
+  },
+  {
+    num: '03', tag: 'Exclusive',
+    icon: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.gold} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"/><line x1="6" y1="17" x2="18" y2="17"/></svg>,
+    title: "Chef's Table",
+    desc: 'Sit at the pass. Watch every dish composed. An exclusive 8-seat counter with a 12-course tasting menu.',
+    stat: '12', statLabel: 'Courses'
+  },
 ]
 
 const Experience = () => {
@@ -686,46 +849,106 @@ const Experience = () => {
   const yImage = useTransform(scrollYProgress, [0, 1], ['-10%', '10%'])
 
   return (
-    <section id="experience" ref={ref} style={{ background: C.warmWhite, padding: '130px 60px' }} className="pad-m">
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 72 }}>
-          <Reveal><p style={{ fontFamily: F.label, fontSize: 10, letterSpacing: 4, textTransform: 'uppercase', color: C.gold, marginBottom: 18 }}>The Experience</p></Reveal>
-          <Reveal delay={.1}>
-            <h2 style={{ fontFamily: F.display, fontSize: 'clamp(40px,5vw,64px)', fontWeight: 300, lineHeight: 1.08, color: C.charcoal }}>
-              More than a <em style={{ fontStyle: 'italic', color: C.terra }}>meal</em>
-            </h2>
+    <section id="experience" ref={ref} style={{ background: C.charcoal, padding: '130px 60px', position: 'relative', overflow: 'hidden' }} className="pad-m">
+
+      {/* Faint background image — mirroring Menu section */}
+      <div style={{ position: 'absolute', top: 0, left: 0, width: '40%', height: '100%', opacity: 0.12, pointerEvents: 'none' }}>
+        <motion.div className="exp-parallax" style={{ position: 'absolute', inset: '-15%', y: yImage }}>
+          <img src={imgExpInterior} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', WebkitMaskImage: 'linear-gradient(to right, black, transparent)', maskImage: 'linear-gradient(to right, black, transparent)' }} />
+        </motion.div>
+      </div>
+
+      <div style={{ maxWidth: 1200, margin: '0 auto', position: 'relative', zIndex: 2 }}>
+
+        {/* Header — same rhythm as Menu */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 28, marginBottom: 80 }}>
+          <StaggerWrap>
+            <StaggerItem><p style={{ fontFamily: F.label, fontSize: 10, letterSpacing: 4, textTransform: 'uppercase', color: C.gold, marginBottom: 18 }}>The Experience</p></StaggerItem>
+            <StaggerItem>
+              <h2 style={{ fontFamily: F.display, fontSize: 'clamp(40px,5vw,64px)', fontWeight: 300, lineHeight: 1.08, color: C.warmWhite }}>
+                More than a<br /><em style={{ fontStyle: 'italic', color: C.terra }}>a meal</em>
+              </h2>
+            </StaggerItem>
+          </StaggerWrap>
+          <Reveal>
+            <p style={{ fontFamily: F.body, fontSize: 14, color: C.muted, fontWeight: 300, maxWidth: 320, lineHeight: 1.9 }}>
+              Every visit to Saffron &amp; Sea is orchestrated — not just a dinner, but a complete sensory journey from arrival to the final pour.
+            </p>
           </Reveal>
         </div>
 
-        {/* Hero Image for Experience */}
-        <Reveal delay={.2}>
-          <div style={{ width: '100%', height: 400, borderRadius: 8, overflow: 'hidden', marginBottom: 80, position: 'relative', boxShadow: '0 24px 64px rgba(0,0,0,0.1)' }}>
-            <motion.div style={{ position: 'absolute', inset: '-15%', y: yImage }}>
-              <img src={imgExpInterior} alt="Restaurant Interior" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            </motion.div>
+        {/* Numbered rows — bold horizontal cards */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {EXP.map((e, i) => (
+            <Reveal key={e.num} delay={i * 0.1}>
+              <motion.div
+                whileHover={{ backgroundColor: 'rgba(201,169,110,0.04)', x: 6 }}
+                transition={{ duration: 0.3 }}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '80px 56px 1fr auto',
+                  alignItems: 'center',
+                  gap: 36,
+                  padding: '36px 40px',
+                  border: '1px solid rgba(201,169,110,0.1)',
+                  borderRadius: 4,
+                  background: 'rgba(255,255,255,0.02)',
+                  cursor: 'default',
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}
+                className="col1-m"
+              >
+                {/* Number */}
+                <span style={{ fontFamily: F.display, fontSize: 52, fontWeight: 300, color: 'rgba(201,169,110,0.18)', lineHeight: 1 }}>{e.num}</span>
+
+                {/* Animated icon */}
+                <motion.div
+                  animate={{ y: [0, -5, 0] }}
+                  transition={{ duration: 3.2 + i * 0.5, repeat: Infinity, ease: 'easeInOut' }}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  {e.icon}
+                </motion.div>
+
+                {/* Title + desc */}
+                <div>
+                  <p style={{ fontFamily: F.label, fontSize: 9, letterSpacing: 3, textTransform: 'uppercase', color: C.gold, marginBottom: 10 }}>{e.tag}</p>
+                  <h3 style={{ fontFamily: F.display, fontSize: 28, fontWeight: 300, color: C.warmWhite, marginBottom: 10, lineHeight: 1.15 }}>{e.title}</h3>
+                  <p style={{ fontSize: 13, color: C.muted, lineHeight: 1.88, fontWeight: 300, maxWidth: 480 }}>{e.desc}</p>
+                </div>
+
+                {/* Stat */}
+                <div style={{ textAlign: 'right', minWidth: 80 }}>
+                  <div style={{ fontFamily: F.display, fontSize: 48, fontWeight: 300, color: C.gold, lineHeight: 1 }}>{e.stat}</div>
+                  <div style={{ fontFamily: F.label, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: C.muted, marginTop: 6 }}>{e.statLabel}</div>
+                </div>
+
+                {/* Left gold bar on hover */}
+                <motion.div
+                  initial={{ scaleY: 0 }} whileHover={{ scaleY: 1 }}
+                  style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 2, background: C.gold, transformOrigin: 'top', borderRadius: 1 }}
+                />
+              </motion.div>
+            </Reveal>
+          ))}
+        </div>
+
+        {/* Bottom CTA — mirrors Menu's Reserve a Table feel */}
+        <Reveal delay={0.3}>
+          <div style={{ marginTop: 64, display: 'flex', justifyContent: 'center' }}>
+            <motion.a
+              href="#reserve"
+              whileHover={{ y: -4, backgroundColor: C.goldLight, letterSpacing: '4px' }}
+              style={{ display: 'inline-block', fontFamily: F.label, fontSize: 10, letterSpacing: '3px', textTransform: 'uppercase', color: C.charcoal, background: C.gold, padding: '17px 52px', textDecoration: 'none', transition: 'background .3s, letter-spacing .4s' }}
+            >
+              Reserve Your Evening
+            </motion.a>
           </div>
         </Reveal>
 
-      {/* ── EFFECT 3: GlassCard × 3 ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 32 }} className="col1-m">
-        {EXP.map((e, i) => (
-          <GlassCard key={e.title} style={{ padding: '52px 36px', textAlign: 'center', position: 'relative' }}>
-            <motion.span
-              animate={{ y: [0, -6, 0] }}
-              transition={{ duration: 3 + i * .4, repeat: Infinity, ease: 'easeInOut' }}
-              style={{ fontSize: 40, display: 'block', marginBottom: 28 }}
-            >
-              {e.icon}
-            </motion.span>
-            <h3 style={{ fontFamily: F.display, fontSize: 26, fontWeight: 400, color: C.charcoal, marginBottom: 14 }}>{e.title}</h3>
-            <p style={{ fontSize: 14, color: C.muted, lineHeight: 1.92, fontWeight: 300 }}>{e.desc}</p>
-            {/* bottom gold line */}
-            <div style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 44, height: 1, background: C.gold }} />
-          </GlassCard>
-        ))}
       </div>
-    </div>
-  </section>
+    </section>
   )
 }
 
@@ -828,13 +1051,75 @@ const Footer = () => (
 )
 
 /* ════════════════════════════════════════════
+   MOBILE NAV
+════════════════════════════════════════════ */
+const MobileNav = () => {
+  const [activeSection, setActiveSection] = useState('home')
+
+  useEffect(() => {
+    const sections = [
+      { id: 'home', el: document.body },
+      { id: 'menu', el: document.getElementById('menu') },
+      { id: 'experience', el: document.getElementById('experience') },
+      { id: 'reserve', el: document.getElementById('reserve') },
+    ]
+    const observer = new IntersectionObserver((entries) => {
+      let active = null
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          const sectionId = e.target === document.body ? 'home' : e.target.id
+          active = sectionId
+        }
+      })
+      if (active) setActiveSection(active)
+    }, { threshold: 0.2, rootMargin: '-20% 0px -20% 0px' })
+    
+    sections.forEach(s => {
+      if (s.el) observer.observe(s.el)
+    })
+    return () => observer.disconnect()
+  }, [])
+
+  const navs = [
+    { id: 'home', label: 'Home', href: '#', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg> },
+    { id: 'menu', label: 'Menu', href: '#menu', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg> },
+    { id: 'experience', label: 'Dine', href: '#experience', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8 22h8"/><path d="M12 15v7"/><path d="M12 15a7.5 7.5 0 0 0 7.5-7.5C19.5 5 18 3 12 3S4.5 5 4.5 7.5 8 15 12 15z"/><path d="M4.5 7.5h15"/></svg> },
+    { id: 'reserve', label: 'Reserve', href: '#reserve', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> },
+  ]
+
+  return (
+    <motion.nav
+      initial={{ y: 80, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ delay: 2.4, duration: 0.6, ease: [.22, 1, .36, 1] }}
+      style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 300, background: 'rgba(13,12,10,0.88)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderTop: '1px solid rgba(201,169,110,0.15)', padding: '12px 0 20px 0', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}
+    >
+      {navs.map(n => {
+        const isActive = activeSection === n.id
+        return (
+          <a key={n.id} href={n.href} onClick={(e) => {
+            if (n.href === '#') { e.preventDefault(); window.scrollTo(0,0) }
+            setActiveSection(n.id)
+          }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, textDecoration: 'none', color: isActive ? C.gold : 'rgba(140,130,120,0.5)', transition: 'color 0.3s' }}>
+            <motion.div animate={{ scaleX: isActive ? 1 : 0 }} transition={{ type: 'spring', stiffness: 300, damping: 28 }} style={{ width: 20, height: 1.5, background: C.gold, marginBottom: 2 }} />
+            {n.icon}
+            <span style={{ fontFamily: F.label, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase' }}>{n.label}</span>
+          </a>
+        )
+      })}
+    </motion.nav>
+  )
+}
+
+/* ════════════════════════════════════════════
    APP ROOT
 ════════════════════════════════════════════ */
 export default function App() {
+  const isMobile = useIsMobile()
   return (
     <>
       <Globals />
-      <Cursor />
+      {!isMobile && <Cursor />}
       <Navbar />
       <main>
         <Hero />
@@ -846,6 +1131,7 @@ export default function App() {
         <Reservation />
       </main>
       <Footer />
+      {isMobile && <MobileNav />}
     </>
   )
 }
